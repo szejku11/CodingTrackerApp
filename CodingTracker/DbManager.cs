@@ -1,8 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using System.Configuration;
-using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CodingTracker
 {
