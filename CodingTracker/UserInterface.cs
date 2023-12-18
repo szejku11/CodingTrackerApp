@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CodingTracker
 {
@@ -24,20 +27,24 @@ namespace CodingTracker
                         stop = true;
                         break;
                     case "1":
-                        //DisplayData();
+                        Console.Clear();
+                        ConsoleTable.DisplayData(DbManager.AllDataToDisplay());
                         Console.WriteLine();
                         Console.WriteLine("Click enter to go back");
                         Console.ReadLine();
                         Console.Clear();
                         break;
                     case "2":
-                        DbManager.InsertRow();
+                        DbManager.InsertRow(false);
                         break;
                     case "3":
-                        //DatabaseHelper.UpdateRow();
+                        DbManager.InsertRow(true);
                         break;
                     case "4":
-                        //DatabaseHelper.DeleteRow();
+                        DbManager.UpdateRow();
+                        break;
+                    case "5":
+                        DbManager.DeleteRow();
                         break;
                     default:
                         Console.Write("Unkown key pressed. Please click enter to try again.");
@@ -47,18 +54,125 @@ namespace CodingTracker
 
             }
         }
-
-        internal static (string startTime, string endTime) GetInput()
+        internal static (string startDate, string endDate) GetInput()
         {
-            string? startDate = GetDateTime("Insert START date and time of coding session.");
-            if (string.IsNullOrEmpty(startDate)) return (null, null);
+            bool validateDate = false;
+            bool goBack = false;
+            string? startDate = "";
+            string? endDate = "";
 
-            string? endDate = GetDateTime("Insert END date and time of coding session.");
-            if (string.IsNullOrEmpty(endDate)) return (null, null);
+            while (!validateDate)
+            {
+                startDate = GetDateTime("Insert START date and time of coding session.");
+                if (string.IsNullOrEmpty(startDate)) goBack = true;
 
+                endDate = GetDateTime("Insert END date and time of coding session.");
+                if (string.IsNullOrEmpty(endDate)) goBack = true;
+
+                if (goBack)
+                {
+                    validateDate = true;
+                }
+                else
+                {
+                    validateDate = Validation.ValidateDates(startDate, endDate);
+                    if (!validateDate)
+                    {
+                        Console.Clear();
+                        Console.WriteLine("START date must be lower than END date, please click enter to try again.");
+                        Console.ReadLine();
+                    }
+                }
+            }
+
+            if (goBack) return (null, null);
             return (startDate, endDate);
         }
+        internal static (string startDate, string endDate) GetInputStopwatch()
+        {
+            string startDate = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
 
+            Console.Clear();
+            Console.WriteLine("Counting time with stopwatch.");
+            Console.WriteLine($"Start: {startDate}");
+            Console.Write("Type 1 to stop time and add record (0 to go back): ");
+            string numberText = Console.ReadLine();
+            int number;
+            int.TryParse(numberText, out number);
+
+            if (!number.ToString().Equals(numberText)) number = -1;
+
+            while (number != 0 && number != 1)
+            {
+                Console.Clear();
+                Console.WriteLine("Counting time with stopwatch.");
+                Console.WriteLine($"Start: {startDate}");
+                Console.Write("Invalid input, please type 1 to stop time and add record (0 to go back): ");
+                numberText = Console.ReadLine();
+                int.TryParse(numberText, out number);
+                if (!number.ToString().Equals(numberText)) number = -1;
+            }
+
+            if (number == 0) return (null, null);
+            return (startDate, DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss"));
+        }
+        internal static (int id, string startTime, string endTime) GetUpdateInfo(bool delete)
+        {
+            Console.Clear();
+            ConsoleTable.DisplayData(DbManager.AllDataToDisplay());
+
+            List<CodingModel> data = DbManager.AllDataToList();
+            List<int> ids = data.Select(x => x.Id).ToList();
+
+            if (ids.Count == 0)
+            {
+                Console.Clear();
+                Console.Write("No rows to update/delete, click enter to go back.");
+                Console.ReadLine();
+                return (0, null, null);
+            }
+
+            int id = GetInputNumber("Please insert row ID you want to update/delete (0 to go back): ");
+
+            while (!ids.Contains(id))
+            {
+                if (id == 0)
+                {
+                    return (0, null, null);
+                }
+                Console.WriteLine("Row ID is not in the database, please click enter to try again.");
+                Console.ReadLine();
+                Console.Clear();
+                ConsoleTable.DisplayData(DbManager.AllDataToDisplay());
+                id = id = GetInputNumber("Please insert row ID you want to update/delete (0 to go back): ");
+            }
+
+            if (delete) return (id, null, null);
+
+            (string startTime, string endTime) = GetInput();
+            return (id, startTime, endTime);
+        }
+        private static int GetInputNumber(string text)
+        {
+            Console.Write(text);
+            string numberText = Console.ReadLine();
+            int number;
+            int.TryParse(numberText, out number);
+
+            while (number <= 0)
+            {
+                if (number == 0)
+                {
+                    return 0;
+                }
+                Console.Clear();
+                Console.Write("Invalid input, " + text.ToLower());
+                numberText = Console.ReadLine();
+                int.TryParse(numberText, out number);
+            }
+
+            return number;
+        }
         private static string GetDateTime(string text)
         {
             Console.Clear();
@@ -71,7 +185,7 @@ namespace CodingTracker
                 return null;
             }
 
-            while (!DateTime.TryParseExact(date, "dd-MM-yyyy HH:mm:ss", 
+            while (!DateTime.TryParseExact(date, "dd-MM-yyyy HH:mm:ss",
                    CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
             {
                 Console.Clear();
@@ -95,8 +209,9 @@ namespace CodingTracker
             Console.WriteLine("-------------------------------------------");
             Console.WriteLine("1 - View all records");
             Console.WriteLine("2 - Add new record");
-            Console.WriteLine("3 - Update record");
-            Console.WriteLine("4 - Delete record");
+            Console.WriteLine("3 - Add new record with stopwatch");
+            Console.WriteLine("4 - Update record");
+            Console.WriteLine("5 - Delete record");
             Console.WriteLine("0 - Exit");
             Console.WriteLine("-------------------------------------------");
         }

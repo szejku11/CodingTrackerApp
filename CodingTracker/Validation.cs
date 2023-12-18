@@ -10,17 +10,29 @@ namespace CodingTracker
 {
     internal static class Validation
     {
-        internal static string CodingSessionDuration(string startTime, string endTime)
+        private static DateTime ParseDate(string date)
         {
-            DateTime dateTimeStart = DateTime.ParseExact(startTime, "dd-MM-yyyy HH:mm:ss",
-                   CultureInfo.InvariantCulture, DateTimeStyles.None);
-            
-            DateTime dateTimeEnd = DateTime.ParseExact(endTime, "dd-MM-yyyy HH:mm:ss",
+            DateTime output = DateTime.ParseExact(date, "dd-MM-yyyy HH:mm:ss",
                    CultureInfo.InvariantCulture, DateTimeStyles.None);
 
-            TimeSpan dif = dateTimeEnd - dateTimeStart;
+            return output;
+        }
+        internal static string CodingSessionDuration(string start, string end)
+        {
+            DateTime startDateTime = ParseDate(start);
+            DateTime endDateTime = ParseDate(end);
+
+            TimeSpan dif = endDateTime - startDateTime;
 
             return dif.ToString();
+        }
+        internal static bool ValidateDates(string start, string end)
+        {
+            DateTime startDateTime = ParseDate(start);
+            DateTime endDateTime = ParseDate(end);
+
+            if (startDateTime >= endDateTime) return false;
+            return true;
         }
     }
 }
