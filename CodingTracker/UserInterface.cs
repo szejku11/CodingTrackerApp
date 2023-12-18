@@ -56,24 +56,25 @@ namespace CodingTracker
             while (!validateDate)
             {
                 startDate = GetDateTime("Insert START date and time of coding session.");
-                if (string.IsNullOrEmpty(startDate)) goBack = true;
+                if (string.IsNullOrEmpty(startDate))
+                {
+                    goBack = true;
+                    break;
+                }
 
                 endDate = GetDateTime("Insert END date and time of coding session.");
-                if (string.IsNullOrEmpty(endDate)) goBack = true;
-
-                if (goBack)
+                if (string.IsNullOrEmpty(endDate))
                 {
-                    validateDate = true;
+                    goBack = true;
+                    break;
                 }
-                else
+
+                validateDate = Validation.ValidateDates(startDate, endDate);
+                if (!validateDate)
                 {
-                    validateDate = Validation.ValidateDates(startDate, endDate);
-                    if (!validateDate)
-                    {
-                        Console.Clear();
-                        Console.WriteLine("START date must be lower than END date, please click enter to try again.");
-                        Console.ReadLine();
-                    }
+                    Console.Clear();
+                    Console.WriteLine("START date must be lower than END date, please click enter to try again.");
+                    Console.ReadLine();
                 }
             }
 
